@@ -21,6 +21,9 @@ Or install it yourself as:
 ```ruby
 require 'russian_post'
 
- RussianPost::Captcha.for_url('http://www.russianpost.ru/CaptchaService/CaptchaImage.ashx?Id=361256433').text
- => 96950
+RussianPost::Captcha.for_url(captcha_url).text
+# => 96950
+
+RussianPost::Captcha.for_data(png_blob).text
+# => 43455
 ```
