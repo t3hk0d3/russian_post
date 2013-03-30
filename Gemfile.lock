@@ -1,0 +1,29 @@
+PATH
+  remote: .
+  specs:
+    russian_post (0.0.1)
+      chunky_png (~> 1.2)
+      excon (~> 0.20)
+      nokogiri (~> 1.5)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    addressable (2.3.3)
+    chunky_png (1.2.7)
+    crack (0.3.2)
+    excon (0.20.1)
+    nokogiri (1.5.9)
+    rake (10.0.3)
+    webmock (1.11.0)
+      addressable (>= 2.2.7)
+      crack (>= 0.3.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  bundler (~> 1.3)
+  rake
+  russian_post!
+  webmock (~> 1.11)
