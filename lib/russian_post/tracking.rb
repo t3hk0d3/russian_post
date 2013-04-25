@@ -44,15 +44,10 @@ module RussianPost
     private
 
     def parse_request_form(body)
-      tracking_params = {}
-
-      body.scan(/\<input ([^\>]+)\>/) do |result|
+      body.scan(/\<input ([^\>]+)\>/).reduce({}) do |acc, result|
         param = Hash[result.first.scan(/(name|value)=(?:"|')([^\"\']+)(?:"|')/)]
-
-        tracking_params[param['name']] = param['value']
+        acc.merge param['name'] => param['value']
       end
-
-      tracking_params
     end
 
     def parse_action_path(body)
