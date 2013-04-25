@@ -8,10 +8,12 @@ module RussianPost
 
   class Tracking
 
+    attr_reader :barcode
+
     TRACKING_PAGE = 'http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo'
 
     def initialize(tracking_code)
-      @code = tracking_code.strip
+      @barcode = tracking_code.strip
     end
 
     def track
@@ -26,7 +28,7 @@ module RussianPost
 
       raise "Unable to recognize captcha" unless captcha.valid?
 
-      tracking_params['BarCode'] = @code
+      tracking_params['BarCode'] = barcode
       tracking_params['InputedCaptchaCode'] = captcha.text
       tracking_params['searchsign'] = '1' # strictly required
 
