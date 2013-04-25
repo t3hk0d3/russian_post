@@ -15,30 +15,12 @@ module RussianPost
     end
 
     def track
-      # fetch form
       response = fetch(TRACKING_PAGE)
 
-      tracking_form = response.body
+      tracking_params = parse_request_form(response.body)
 
-      tracking_params = {}
-
-      tracking_form.scan(/\<input ([^\>]+)\>/) do |result|
-        param = Hash[result.first.scan(/(name|value)=(?:"|')([^\"\']+)(?:"|')/)]
-
-        tracking_params[param['name']] = param['value']
-      end
-
-      action_path = if tracking_form =~ /\<form .* action=\"([^\"]+)\"/
-        $1
-      else
-        raise "Unable to extract form path"
-      end
-
-      captcha_url = if tracking_form =~ /<img id='captchaImage' src='([^\']+)'/
-        $1
-      else
-        raise "Unable to extract captcha image url"
-      end
+      action_path = parse_action_path(response.body) or raise "Unable to extract form path"
+      captcha_url = parse_captcha_url(response.body) or raise "Unable to extract captcha image url"
 
       captcha =  RussianPost::Captcha.for_url(captcha_url)
 
@@ -46,48 +28,77 @@ module RussianPost
 
       tracking_params['BarCode'] = @code
       tracking_params['InputedCaptchaCode'] = captcha.text
-      tracking_params['searchsign'] = '1' 
+      tracking_params['searchsign'] = '1' # strictly required
 
-      cookies = Hash[response.headers['Set-Cookie'].scan(/([^\=\;]+)=([^\;]+)[^\,]*,*/).map { |name, value| [name.strip, value.strip] }]
-      cookies.delete("path")
-      cookies = cookies.map { |name, value| "#{name}=#{value}"}.join("; ")
-
-      request_data = encode_params(tracking_params)
-
-      response = Excon.post('http://www.russianpost.ru' + action_path, 
-        :headers => {'Cookie' => cookies,
-          'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22',
-          'Referer' => 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo',\
-          'Origin' => 'http://www.russianpost.ru',
-          'Content-Type' => 'application/x-www-form-urlencoded',
-          'Content-Length' => request_data.size
-        },
-        :body => request_data)
+      response = request_tracking_data(tracking_params, prepare_cookies(response), action_path)
 
       if response.body =~ /<table class="pagetext">(.+)<\/table>/
-        doc = Nokogiri::HTML::Document.parse(response.body)
-
-        columns = [:type, :date, :zip_code, :location, :message, :weight, :declared_cost, :delivery_cash, :destination_zip_code, :destination_location]
-
-        rows = []
-        doc.css('table.pagetext tr').each do |row|
-          data = row.css('td').map(&:text).map { |text| !['-', ''].include?(text) ? text : nil }
-
-          next if data.empty?
-
-          hash = Hash[columns.zip(data)]
-          hash[:date] = Time.parse("#{hash[:date]} +04:00")
-
-          rows << hash
-        end
-
-        return rows
+        parse_tracking_table(response.body)
       else
         raise "No tracks table in response"
       end
     end
 
     private
+
+    def parse_request_form(body)
+      tracking_params = {}
+
+      body.scan(/\<input ([^\>]+)\>/) do |result|
+        param = Hash[result.first.scan(/(name|value)=(?:"|')([^\"\']+)(?:"|')/)]
+
+        tracking_params[param['name']] = param['value']
+      end
+
+      tracking_params
+    end
+
+    def parse_action_path(body)
+      $1 if body =~ /\<form .* action=\"([^\"]+)\"/
+    end
+
+    def parse_captcha_url(body)
+      $1 if body =~ /<img id='captchaImage' src='([^\']+)'/
+    end
+
+    def parse_tracking_table(body)
+      doc = Nokogiri::HTML::Document.parse(body)
+
+      columns = [:type, :date, :zip_code, :location, :message, :weight, :declared_cost, :delivery_cash, :destination_zip_code, :destination_location]
+
+      rows = []
+      doc.css('table.pagetext tr').each do |row|
+        data = row.css('td').map(&:text).map { |text| !['-', ''].include?(text) ? text : nil }
+
+        next if data.empty?
+
+        hash = Hash[columns.zip(data)]
+        hash[:date] = Time.parse("#{hash[:date]} +04:00")
+
+        rows << hash
+      end
+
+      return rows
+    end
+
+    def request_tracking_data(params, cookies, action_path)
+      request_data = encode_params(params)
+
+      Excon.post('http://www.russianpost.ru' + action_path, 
+        :headers => {'Cookie' => cookies,
+          'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22',
+          'Referer' => 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo',
+          'Origin' => 'http://www.russianpost.ru',
+          'Content-Type' => 'application/x-www-form-urlencoded',
+          'Content-Length' => request_data.size },
+        :body => request_data)
+    end
+
+    def prepare_cookies(response)
+      cookies = Hash[response.headers['Set-Cookie'].scan(/([^\=\;]+)=([^\;]+)[^\,]*,*/).map { |name, value| [name.strip, value.strip] }]
+      cookies.delete("path")
+      cookies.map { |name, value| "#{name}=#{value}"}.join("; ")
+    end
 
     def encode_params(params)
       params.map do |name, value|
