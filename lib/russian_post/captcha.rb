@@ -29,6 +29,10 @@ module RussianPost
       @recognized_text ||= prepare_text(recognize)
     end
 
+    def valid?
+      text.size == 5
+    end
+
     def recognize
       @recognize ||= recognize!
     end
@@ -80,6 +84,10 @@ module RussianPost
 
         if data =~ /Object moved/ # faulty captcha
           raise "Russian Post captcha service error"
+        end
+
+        if data.include?("window.location.replace(window.location.toString())")
+          return fetch_image # start from beginning
         end
       end
 
