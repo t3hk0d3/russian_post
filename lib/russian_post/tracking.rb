@@ -13,7 +13,7 @@ module RussianPost
     TRACKING_PAGE = 'http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo'
 
     def initialize(tracking_code)
-      @barcode = tracking_code.strip
+      @barcode = tracking_code.strip.upcase
     end
 
     def track
