@@ -1,6 +1,7 @@
 # Russian Post Tools
 
 [![Code Climate](https://codeclimate.com/github/t3hk0d3/russian_post.png)](https://codeclimate.com/github/t3hk0d3/russian_post)
+[![Build Status](https://travis-ci.org/t3hk0d3/russian_post.png?branch=master)](https://travis-ci.org/t3hk0d3/russian_post)
 
 ## Installation
 
