@@ -1,5 +1,7 @@
 # Russian Post Tools
 
+[![Code Climate](https://codeclimate.com/github/t3hk0d3/russian_post.png)](https://codeclimate.com/github/t3hk0d3/russian_post)
+
 ## Installation
 
 Add this line to your application's Gemfile:
