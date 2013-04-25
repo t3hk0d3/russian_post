@@ -16,6 +16,15 @@ Or install it yourself as:
 
 ## Usage
 
+### Postal tracking
+
+```ruby
+require 'russian_post'
+
+RussianPost::Tracking.new(tracking_code).track
+# => [{...}, {...}, {...}]
+```
+
 ### Captcha recognizer
 
 ```ruby
