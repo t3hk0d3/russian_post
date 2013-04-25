@@ -64,21 +64,15 @@ module RussianPost
     def parse_tracking_table(body)
       doc = Nokogiri::HTML::Document.parse(body)
 
-      columns = [:type, :date, :zip_code, :location, :message, :weight, :declared_cost, :delivery_cash, :destination_zip_code, :destination_location]
+      columns = [:type, :date, :zip_code, :location, :message, :weight,
+        :declared_cost, :delivery_cash, :destination_zip_code, :destination_location]
 
-      rows = []
-      doc.css('table.pagetext tr').each do |row|
-        data = row.css('td').map(&:text).map { |text| !['-', ''].include?(text) ? text : nil }
+      doc.css('table.pagetext tbody tr').map do |row|
+        data = row.css('td').map { |td| td.text unless ['-', ''].include?(td.text) }
 
-        next if data.empty?
-
-        hash = Hash[columns.zip(data)]
-        hash[:date] = Time.parse("#{hash[:date]} +04:00")
-
-        rows << hash
+        data[1] = Time.parse("#{data[1]} +04:00")
+        Hash[columns.zip(data)]
       end
-
-      return rows
     end
 
     def request_tracking_data(params, cookies, action_path)
