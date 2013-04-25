@@ -2,8 +2,14 @@ $:.unshift File.expand_path("../lib/russian_post/", File.dirname(__FILE__))
 
 require 'test/unit'
 require 'webmock/test_unit'
+require 'vcr'
 
 require 'russian_post'
+
+VCR.configure do |c|
+  c.cassette_library_dir = 'test/fixtures'
+  c.hook_into :webmock
+end
 
 class Test::Unit::TestCase
 
