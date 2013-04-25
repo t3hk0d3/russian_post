@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.version       = RussianPost::VERSION
   spec.authors       = ["t3hk0d3"]
   spec.email         = ["clouster@yandex.ru"]
-  spec.description   = %q{RussianPost tools}
-  spec.summary       = %q{RussianPost tools}
+  spec.description   = %q{Russian Post tracking toolset, consisting tracking form bot (since Russian Post is too retarded for normal API) and captcha solver/recognizer.}
+  spec.summary       = %q{Russian Post postal tracking toolset}
   spec.homepage      = "http://github.com/t3hk0d3/russian_post"
   spec.license       = "MIT"
 
