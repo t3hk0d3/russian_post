@@ -76,7 +76,7 @@ module RussianPost
           next if data.empty?
 
           hash = Hash[columns.zip(data)]
-          hash[:date] = Time.parse(hash[:date])
+          hash[:date] = Time.parse("#{hash[:date]} +04:00")
 
           rows << hash
         end
