@@ -18,11 +18,12 @@ module RussianPost
 
     def track
       response = fetch(TRACKING_PAGE)
+      body = Nokogiri::HTML::Document.parse(response.body)
 
-      tracking_params = parse_request_form(response.body)
+      tracking_params = parse_request_form(body)
 
-      action_path = parse_action_path(response.body) or raise "Unable to extract form path"
-      captcha_url = parse_captcha_url(response.body) or raise "Unable to extract captcha image url"
+      action_path = parse_action_path(body) or raise "Unable to extract form path"
+      captcha_url = parse_captcha_url(body) or raise "Unable to extract captcha image url"
 
       captcha =  RussianPost::Captcha.for_url(captcha_url)
 
@@ -44,18 +45,17 @@ module RussianPost
     private
 
     def parse_request_form(body)
-      body.scan(/\<input ([^\>]+)\>/).reduce({}) do |acc, result|
-        param = Hash[result.first.scan(/(name|value)=(?:"|')([^\"\']+)(?:"|')/)]
-        acc.merge param['name'] => param['value']
+      body.css("input").reduce({}) do |acc, result|
+        acc.merge Hash[result.attr("name"), result.attr("value")]
       end
     end
 
     def parse_action_path(body)
-      $1 if body =~ /\<form .* action=\"([^\"]+)\"/
+      body.css("form").attr("action")
     end
 
     def parse_captcha_url(body)
-      $1 if body =~ /<img id='captchaImage' src='([^\']+)'/
+      body.css("#captchaImage").attr("src")
     end
 
     def parse_tracking_table(body)
