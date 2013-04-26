@@ -23,6 +23,11 @@ module RussianPost
       :delivery_cash,
       :destination_zip_code,
       :destination_location]
+    GENERIC_HEADERS = {
+      'User-Agent'   => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22',
+      'Referer'      => 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo',
+      'Origin'       => 'http://www.russianpost.ru',
+      'Content-Type' => 'application/x-www-form-urlencoded'}
 
     def initialize(tracking_code)
       @barcode = tracking_code.strip.upcase
@@ -76,12 +81,9 @@ module RussianPost
       request_data = encode_params(prepare_params)
 
       response = Excon.post(ACTION_URL, 
-        :headers => {'Cookie' => prepare_cookies,
-          'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22',
-          'Referer' => 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo',
-          'Origin' => 'http://www.russianpost.ru',
-          'Content-Type' => 'application/x-www-form-urlencoded',
-          'Content-Length' => request_data.size },
+        :headers => {
+          'Cookie' => prepare_cookies,
+          'Content-Length' => request_data.size }.merge(GENERIC_HEADERS),
         :body => request_data)
 
       set_current_page!(response)
