@@ -11,6 +11,7 @@ module RussianPost
     attr_reader :barcode
 
     TRACKING_PAGE = 'http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo'
+    ACTION_URL = 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo'
 
     def initialize(tracking_code)
       @barcode = tracking_code.strip.upcase
@@ -20,14 +21,12 @@ module RussianPost
       response = fetch(TRACKING_PAGE)
       body = Nokogiri::HTML::Document.parse(response.body)
 
-      action_path = parse_action_path(body)
-
       tracking_params = parse_request_form(body)
       tracking_params['BarCode'] = barcode
       tracking_params['InputedCaptchaCode'] = solve_captcha(body)
       tracking_params['searchsign'] = '1' # strictly required
 
-      response = request_tracking_data(tracking_params, prepare_cookies(response), action_path)
+      response = request_tracking_data(tracking_params, prepare_cookies(response))
       body = Nokogiri::HTML::Document.parse(response.body)
       
       if body.css("table.pagetext")
@@ -51,10 +50,6 @@ module RussianPost
       end
     end
 
-    def parse_action_path(body)
-      body.css("form").attr("action") or raise "Unable to extract form path"
-    end
-
     def parse_captcha_url(body)
       body.css("#captchaImage").attr("src") or raise "Unable to extract captcha image url"
     end
@@ -71,10 +66,10 @@ module RussianPost
       end
     end
 
-    def request_tracking_data(params, cookies, action_path)
+    def request_tracking_data(params, cookies)
       request_data = encode_params(params)
 
-      Excon.post('http://www.russianpost.ru' + action_path, 
+      Excon.post(ACTION_URL, 
         :headers => {'Cookie' => cookies,
           'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22',
           'Referer' => 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo',
