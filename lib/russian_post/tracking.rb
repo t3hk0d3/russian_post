@@ -20,10 +20,9 @@ module RussianPost
       response = fetch(TRACKING_PAGE)
       body = Nokogiri::HTML::Document.parse(response.body)
 
+      action_path = parse_action_path(body)
+
       tracking_params = parse_request_form(body)
-
-      action_path = parse_action_path(body) or raise "Unable to extract form path"
-
       tracking_params['BarCode'] = barcode
       tracking_params['InputedCaptchaCode'] = solve_captcha(body)
       tracking_params['searchsign'] = '1' # strictly required
@@ -52,7 +51,7 @@ module RussianPost
     end
 
     def parse_action_path(body)
-      body.css("form").attr("action")
+      body.css("form").attr("action") or raise "Unable to extract form path"
     end
 
     def parse_captcha_url(body)
