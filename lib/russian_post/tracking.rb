@@ -8,7 +8,7 @@ module RussianPost
 
   class Tracking
 
-    attr_reader :barcode
+    attr_reader :barcode, :current_page, :current_html
 
     TRACKING_PAGE = 'http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo'
     ACTION_URL = 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo'
@@ -18,15 +18,14 @@ module RussianPost
     end
 
     def track
-      response = fetch(TRACKING_PAGE)
-      body = Nokogiri::HTML::Document.parse(response.body)
+      fetch_initial_page!(TRACKING_PAGE)
 
-      tracking_params = parse_request_form(body)
+      tracking_params = parse_request_form
       tracking_params['BarCode'] = barcode
-      tracking_params['InputedCaptchaCode'] = solve_captcha(body)
+      tracking_params['InputedCaptchaCode'] = solve_captcha
       tracking_params['searchsign'] = '1' # strictly required
 
-      response = request_tracking_data(tracking_params, prepare_cookies(response))
+      response = request_tracking_data(tracking_params, prepare_cookies)
       body = Nokogiri::HTML::Document.parse(response.body)
       
       if body.css("table.pagetext")
@@ -38,20 +37,20 @@ module RussianPost
 
     private
 
-    def solve_captcha(body)
-      captcha = RussianPost::Captcha.for_url(parse_captcha_url(body))
+    def solve_captcha
+      captcha = RussianPost::Captcha.for_url(parse_captcha_url)
       raise "Unable to recognize captcha" unless captcha.valid?
       captcha.text
     end
 
-    def parse_request_form(body)
-      body.css("input").reduce({}) do |acc, result|
+    def parse_request_form
+      current_html.css("input").reduce({}) do |acc, result|
         acc.merge Hash[result.attr("name"), result.attr("value")]
       end
     end
 
-    def parse_captcha_url(body)
-      body.css("#captchaImage").attr("src") or raise "Unable to extract captcha image url"
+    def parse_captcha_url
+      current_html.css("#captchaImage").attr("src") or raise "Unable to extract captcha image url"
     end
 
     def parse_tracking_table(body)
@@ -79,8 +78,8 @@ module RussianPost
         :body => request_data)
     end
 
-    def prepare_cookies(response)
-      cookies = Hash[response.headers['Set-Cookie'].scan(/([^\=\;]+)=([^\;]+)[^\,]*,*/).map { |name, value| [name.strip, value.strip] }]
+    def prepare_cookies
+      cookies = Hash[current_page.headers['Set-Cookie'].scan(/([^\=\;]+)=([^\;]+)[^\,]*,*/).map { |name, value| [name.strip, value.strip] }]
       cookies.delete("path")
       cookies.map { |name, value| "#{name}=#{value}"}.join("; ")
     end
@@ -91,17 +90,23 @@ module RussianPost
       end.join('&')
     end
 
-    def fetch(url)
+    def fetch_initial_page!(url)
       response = Excon.get(url)
       if response.body =~ /<input id=\"key\" name=\"key\" value=\"([0-9]+)\"\/>/ # tough security huh
         response = Excon.post(url, body: "key=#{$1}")
       end
 
       if response.body.include?("window.location.replace(window.location.toString())") # hehe
+<<<<<<< HEAD
         response = fetch(url)
+=======
+        puts "foo"
+        response = fetch_initial_page!(url)
+>>>>>>> Saved initial page as an instance state
       end
 
-      response
+      @current_page = response
+      @current_html = Nokogiri::HTML(response.body)
     end
 
   end
