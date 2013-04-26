@@ -18,14 +18,9 @@ module RussianPost
     end
 
     def track
-      fetch_initial_page!(TRACKING_PAGE)
+      fetch_initial_page!
 
-      tracking_params = parse_request_form
-      tracking_params['BarCode'] = barcode
-      tracking_params['InputedCaptchaCode'] = solve_captcha
-      tracking_params['searchsign'] = '1' # strictly required
-
-      response = request_tracking_data(tracking_params, prepare_cookies)
+      response = request_tracking_data(prepare_params, prepare_cookies)
       body = Nokogiri::HTML::Document.parse(response.body)
       
       if body.css("table.pagetext")
@@ -78,6 +73,14 @@ module RussianPost
         :body => request_data)
     end
 
+    def prepare_params
+      parse_request_form.merge(
+        'BarCode'            => barcode,
+        'InputedCaptchaCode' => solve_captcha,
+        'searchsign'         => '1' # strictly required
+      )
+    end
+
     def prepare_cookies
       cookies = Hash[current_page.headers['Set-Cookie'].scan(/([^\=\;]+)=([^\;]+)[^\,]*,*/).map { |name, value| [name.strip, value.strip] }]
       cookies.delete("path")
@@ -90,19 +93,23 @@ module RussianPost
       end.join('&')
     end
 
-    def fetch_initial_page!(url)
-      response = Excon.get(url)
+    def fetch_initial_page!
+      response = Excon.get(TRACKING_PAGE)
       if response.body =~ /<input id=\"key\" name=\"key\" value=\"([0-9]+)\"\/>/ # tough security huh
         response = Excon.post(url, body: "key=#{$1}")
       end
 
       if response.body.include?("window.location.replace(window.location.toString())") # hehe
 <<<<<<< HEAD
+<<<<<<< HEAD
         response = fetch(url)
 =======
         puts "foo"
         response = fetch_initial_page!(url)
 >>>>>>> Saved initial page as an instance state
+=======
+        fetch_initial_page!
+>>>>>>> Extracted params preparation to a separate method and improved initial page fetching a bit
       end
 
       @current_page = response
