@@ -28,9 +28,10 @@ module RussianPost
       tracking_params['searchsign'] = '1' # strictly required
 
       response = request_tracking_data(tracking_params, prepare_cookies(response), action_path)
-
-      if response.body =~ /<table class="pagetext">(.+)<\/table>/
-        parse_tracking_table(response.body)
+      body = Nokogiri::HTML::Document.parse(response.body)
+      
+      if body.css("table.pagetext")
+        parse_tracking_table(body)
       else
         raise "No tracks table in response"
       end
@@ -59,12 +60,10 @@ module RussianPost
     end
 
     def parse_tracking_table(body)
-      doc = Nokogiri::HTML::Document.parse(body)
-
       columns = [:type, :date, :zip_code, :location, :message, :weight,
         :declared_cost, :delivery_cash, :destination_zip_code, :destination_location]
 
-      doc.css('table.pagetext tbody tr').map do |row|
+      body.css('table.pagetext tbody tr').map do |row|
         data = row.css('td').map { |td| td.text unless ['-', ''].include?(td.text) }
 
         data[1] = Time.parse("#{data[1]} +04:00")
