@@ -12,6 +12,17 @@ module RussianPost
 
     TRACKING_PAGE = 'http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo'
     ACTION_URL = 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo'
+    COLUMNS = [
+      :type,
+      :date,
+      :zip_code,
+      :location,
+      :message,
+      :weight,
+      :declared_cost,
+      :delivery_cash,
+      :destination_zip_code,
+      :destination_location]
 
     def initialize(tracking_code)
       @barcode = tracking_code.strip.upcase
@@ -49,15 +60,14 @@ module RussianPost
     end
 
     def parse_tracking_table(body)
-      columns = [:type, :date, :zip_code, :location, :message, :weight,
-        :declared_cost, :delivery_cash, :destination_zip_code, :destination_location]
+      body.css('table.pagetext tbody tr').map { |e| e.parse_row }
+    end
 
-      body.css('table.pagetext tbody tr').map do |row|
-        data = row.css('td').map { |td| td.text unless ['-', ''].include?(td.text) }
-
-        data[1] = Time.parse("#{data[1]} +04:00")
-        Hash[columns.zip(data)]
-      end
+    def parse_row(row)
+      data = row.css('td').map { |td| td.text unless ['-', ''].include?(td.text) }
+      data[1] = Time.parse("#{data[1]} +04:00")
+      
+      Hash[COLUMNS.zip(data)]
     end
 
     def request_tracking_data(params, cookies)
