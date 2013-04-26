@@ -96,7 +96,7 @@ module RussianPost
     def fetch_initial_page!
       response = Excon.get(TRACKING_PAGE)
       if response.body =~ /<input id=\"key\" name=\"key\" value=\"([0-9]+)\"\/>/ # tough security huh
-        response = Excon.post(url, body: "key=#{$1}")
+        response = Excon.post(TRACKING_PAGE, body: "key=#{$1}")
       end
 
       if response.body.include?("window.location.replace(window.location.toString())") # hehe
