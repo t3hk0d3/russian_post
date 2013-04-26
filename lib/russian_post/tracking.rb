@@ -82,9 +82,7 @@ module RussianPost
     end
 
     def prepare_cookies
-      cookies = Hash[current_page.headers['Set-Cookie'].scan(/([^\=\;]+)=([^\;]+)[^\,]*,*/).map { |name, value| [name.strip, value.strip] }]
-      cookies.delete("path")
-      cookies.map { |name, value| "#{name}=#{value}"}.join("; ")
+      current_page.headers['Set-Cookie'].scan(/[\w\.]+=[\w\-]+(?=;)/).join("; ")
     end
 
     def encode_params(params)
