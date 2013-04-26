@@ -30,12 +30,10 @@ module RussianPost
 
     def track
       fetch_initial_page!
-
-      response = request_tracking_data(prepare_params, prepare_cookies)
-      body = Nokogiri::HTML::Document.parse(response.body)
+      request_tracking_data!
       
-      if body.css("table.pagetext")
-        parse_tracking_table(body)
+      if current_html.css("table.pagetext")
+        parse_tracking_table(current_html)
       else
         raise "No tracks table in response"
       end
@@ -60,27 +58,33 @@ module RussianPost
     end
 
     def parse_tracking_table(body)
-      body.css('table.pagetext tbody tr').map { |e| e.parse_row }
+      body.css('table.pagetext tbody tr').map { |e| parse_row(e) }
     end
 
     def parse_row(row)
-      data = row.css('td').map { |td| td.text unless ['-', ''].include?(td.text) }
+      data = get_row_data(row)
       data[1] = Time.parse("#{data[1]} +04:00")
-      
+
       Hash[COLUMNS.zip(data)]
     end
 
-    def request_tracking_data(params, cookies)
-      request_data = encode_params(params)
+    def get_row_data(row)
+      row.css('td').map { |td| td.text unless ['-', ''].include?(td.text) }
+    end
 
-      Excon.post(ACTION_URL, 
-        :headers => {'Cookie' => cookies,
+    def request_tracking_data!
+      request_data = encode_params(prepare_params)
+
+      response = Excon.post(ACTION_URL, 
+        :headers => {'Cookie' => prepare_cookies,
           'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22',
           'Referer' => 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo',
           'Origin' => 'http://www.russianpost.ru',
           'Content-Type' => 'application/x-www-form-urlencoded',
           'Content-Length' => request_data.size },
         :body => request_data)
+
+      set_current_page!(response)
     end
 
     def prepare_params
@@ -120,6 +124,10 @@ module RussianPost
 >>>>>>> Extracted params preparation to a separate method and improved initial page fetching a bit
       end
 
+      set_current_page!(response)
+    end
+
+    def set_current_page!(response)
       @current_page = response
       @current_html = Nokogiri::HTML(response.body)
     end
