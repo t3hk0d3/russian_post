@@ -23,14 +23,9 @@ module RussianPost
       tracking_params = parse_request_form(body)
 
       action_path = parse_action_path(body) or raise "Unable to extract form path"
-      captcha_url = parse_captcha_url(body) or raise "Unable to extract captcha image url"
-
-      captcha =  RussianPost::Captcha.for_url(captcha_url)
-
-      raise "Unable to recognize captcha" unless captcha.valid?
 
       tracking_params['BarCode'] = barcode
-      tracking_params['InputedCaptchaCode'] = captcha.text
+      tracking_params['InputedCaptchaCode'] = solve_captcha(body)
       tracking_params['searchsign'] = '1' # strictly required
 
       response = request_tracking_data(tracking_params, prepare_cookies(response), action_path)
@@ -44,6 +39,12 @@ module RussianPost
 
     private
 
+    def solve_captcha(body)
+      captcha = RussianPost::Captcha.for_url(parse_captcha_url(body))
+      raise "Unable to recognize captcha" unless captcha.valid?
+      captcha.text
+    end
+
     def parse_request_form(body)
       body.css("input").reduce({}) do |acc, result|
         acc.merge Hash[result.attr("name"), result.attr("value")]
@@ -55,7 +56,7 @@ module RussianPost
     end
 
     def parse_captcha_url(body)
-      body.css("#captchaImage").attr("src")
+      body.css("#captchaImage").attr("src") or raise "Unable to extract captcha image url"
     end
 
     def parse_tracking_table(body)
