@@ -113,7 +113,6 @@ module RussianPost
       end
 
       if response.body.include?("window.location.replace(window.location.toString())") # hehe
-        puts "foo"
         response = fetch(url)
       end
 
