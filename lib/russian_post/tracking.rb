@@ -10,17 +10,8 @@ module RussianPost
     attr_reader :barcode, :agent
 
     TRACKING_PAGE = 'http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo'
-    COLUMNS = [
-      :type,
-      :date,
-      :zip_code,
-      :location,
-      :message,
-      :weight,
-      :declared_cost,
-      :delivery_cash,
-      :destination_zip_code,
-      :destination_location]
+    COLUMNS = [:type, :date, :zip_code, :location, :message, :weight, :declared_cost,
+      :delivery_cash, :destination_zip_code, :destination_location]
     
     def initialize(tracking_code)
       @barcode = tracking_code.strip.upcase
