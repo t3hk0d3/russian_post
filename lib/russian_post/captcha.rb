@@ -38,7 +38,6 @@ module RussianPost
     end
 
     def recognize!
-
       captcha_image = grayscale(image)
 
       results = {}
@@ -63,7 +62,8 @@ module RussianPost
     end
 
     def prepare_text(results)
-      results.map(&:character).join('')
+      captcha_text = results.map(&:character).join('')
+      captcha_text.size == 5 ? captcha_text : raise("Unable to recognize captcha")
     end
 
     def grayscale(captcha_image)
