@@ -21,7 +21,7 @@ module RussianPost
     def track
       initial_page = fetch_initial_page
       tracking_page = fetch_tracking_data(initial_page)
-      parse_tracking_table(tracking_page.search(".pagetext tbody tr"))
+      parse_tracking_table(tracking_table(tracking_page))
     end
 
     private
@@ -34,8 +34,13 @@ module RussianPost
       page.images.last.src
     end
 
-    def parse_tracking_table(body)
-      body.map { |e| parse_row(e) }
+    def tracking_table(page)
+      table = page.search(".pagetext tbody tr")
+      table ? table : raise("No tracking table found")
+    end
+
+    def parse_tracking_table(table)
+      table.map { |e| parse_row(e) }
     end
 
     def parse_row(row)
