@@ -1,124 +1,77 @@
-require 'excon'
-require 'nokogiri'
+require 'mechanize'
 
 require 'time'
-require 'cgi'
 
 module RussianPost
 
   class Tracking
 
-    TRACKING_PAGE = 'http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo'
+    attr_reader :barcode, :agent
 
+    TRACKING_PAGE = 'http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo'
+    COLUMNS = [:type, :date, :zip_code, :location, :message, :weight, :declared_cost,
+      :delivery_cash, :destination_zip_code, :destination_location]
+    
     def initialize(tracking_code)
-      @code = tracking_code.strip
+      @barcode = tracking_code.strip.upcase
+      @agent   = Mechanize.new
     end
 
     def track
-      response = fetch(TRACKING_PAGE)
-
-      tracking_params = parse_request_form(response.body)
-
-      action_path = parse_action_path(response.body) or raise "Unable to extract form path"
-      captcha_url = parse_captcha_url(response.body) or raise "Unable to extract captcha image url"
-
-      captcha =  RussianPost::Captcha.for_url(captcha_url)
-
-      raise "Unable to recognize captcha" unless captcha.valid?
-
-      tracking_params['BarCode'] = @code
-      tracking_params['InputedCaptchaCode'] = captcha.text
-      tracking_params['searchsign'] = '1' # strictly required
-
-      response = request_tracking_data(tracking_params, prepare_cookies(response), action_path)
-
-      if response.body =~ /<table class="pagetext">(.+)<\/table>/
-        parse_tracking_table(response.body)
-      else
-        raise "No tracks table in response"
-      end
+      initial_page = fetch_initial_page
+      tracking_page = fetch_tracking_data(initial_page)
+      parse_tracking_table(tracking_table(tracking_page))
     end
 
     private
 
-    def parse_request_form(body)
-      tracking_params = {}
+    def solve_captcha(page)
+      RussianPost::Captcha.for_url(get_captcha_url(page)).text
+    end
 
-      body.scan(/\<input ([^\>]+)\>/) do |result|
-        param = Hash[result.first.scan(/(name|value)=(?:"|')([^\"\']+)(?:"|')/)]
+    def get_captcha_url(page)
+      page.images.last.src
+    end
 
-        tracking_params[param['name']] = param['value']
+    def tracking_table(page)
+      table = page.search(".pagetext tbody tr")
+      table ? table : raise("No tracking table found")
+    end
+
+    def parse_tracking_table(table)
+      table.map { |e| parse_row(e) }
+    end
+
+    def parse_row(row)
+      data = get_row_data(row)
+      data[1] = Time.parse("#{data[1]} +04:00")
+
+      Hash[COLUMNS.zip(data)]
+    end
+
+    def get_row_data(row)
+      row.css('td').map { |td| td.text unless ['-', ''].include?(td.text) }
+    end
+
+    def fetch_initial_page
+      page = agent.get(TRACKING_PAGE)
+      bypass_security(page) or page
+    end
+
+    def bypass_security(page)
+      if page.form.has_field?("key")
+        page.form.submit
+      elsif page.body.include?("window.location.replace(window.location.toString())")
+        fetch_initial_page
       end
-
-      tracking_params
     end
 
-    def parse_action_path(body)
-      $1 if body =~ /\<form .* action=\"([^\"]+)\"/
+    def fetch_tracking_data(page)
+      page.form.set_fields(
+        'BarCode'            => barcode,
+        'InputedCaptchaCode' => solve_captcha(page),
+        'searchsign'         => '1')
+      page.form.submit
     end
-
-    def parse_captcha_url(body)
-      $1 if body =~ /<img id='captchaImage' src='([^\']+)'/
-    end
-
-    def parse_tracking_table(body)
-      doc = Nokogiri::HTML::Document.parse(body)
-
-      columns = [:type, :date, :zip_code, :location, :message, :weight, :declared_cost, :delivery_cash, :destination_zip_code, :destination_location]
-
-      rows = []
-      doc.css('table.pagetext tr').each do |row|
-        data = row.css('td').map(&:text).map { |text| !['-', ''].include?(text) ? text : nil }
-
-        next if data.empty?
-
-        hash = Hash[columns.zip(data)]
-        hash[:date] = Time.parse("#{hash[:date]} +04:00")
-
-        rows << hash
-      end
-
-      return rows
-    end
-
-    def request_tracking_data(params, cookies, action_path)
-      request_data = encode_params(params)
-
-      Excon.post('http://www.russianpost.ru' + action_path, 
-        :headers => {'Cookie' => cookies,
-          'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.22 (KHTML, like Gecko) Chrome/25.0.1364.172 Safari/537.22',
-          'Referer' => 'http://www.russianpost.ru/resp_engine.aspx?Path=rp/servise/ru/home/postuslug/trackingpo',
-          'Origin' => 'http://www.russianpost.ru',
-          'Content-Type' => 'application/x-www-form-urlencoded',
-          'Content-Length' => request_data.size },
-        :body => request_data)
-    end
-
-    def prepare_cookies(response)
-      cookies = Hash[response.headers['Set-Cookie'].scan(/([^\=\;]+)=([^\;]+)[^\,]*,*/).map { |name, value| [name.strip, value.strip] }]
-      cookies.delete("path")
-      cookies.map { |name, value| "#{name}=#{value}"}.join("; ")
-    end
-
-    def encode_params(params)
-      params.map do |name, value|
-        "#{CGI.escape(name.to_s)}=#{CGI.escape(value.to_s)}"
-      end.join('&')
-    end
-
-    def fetch(url)
-      response = Excon.get(url)
-      if response.body =~ /<input id=\"key\" name=\"key\" value=\"([0-9]+)\"\/>/ # tough security huh
-        response = Excon.post(url, body: "key=#{$1}")
-      end
-
-      if response.body.include?("window.location.replace(window.location.toString())") # hehe
-        response = fetch(url)
-      end
-
-      response
-    end
-
   end
-
 end
