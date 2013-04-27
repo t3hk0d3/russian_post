@@ -57,31 +57,6 @@ module RussianPost
       page = agent.get(TRACKING_PAGE)
       page.form.has_field?("key") ? page.form.submit : page # bypass security
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-      if response.body.include?("window.location.replace(window.location.toString())") # hehe
-<<<<<<< HEAD
-<<<<<<< HEAD
-        response = fetch(url)
-=======
-        puts "foo"
-        response = fetch_initial_page!(url)
->>>>>>> Saved initial page as an instance state
-=======
-        fetch_initial_page!
->>>>>>> Extracted params preparation to a separate method and improved initial page fetching a bit
-      end
-
-      set_current_page!(response)
-    end
-
-    def set_current_page!(response)
-      @current_page = response
-      @current_html = Nokogiri::HTML(response.body)
-=======
-      page
->>>>>>> Mechanize instead of Excon
-=======
       # I just couldn't reproduce this behavior in 500+ requests. Maybe
       # it's more of an exception?
       # -- @artemshitov
@@ -97,7 +72,6 @@ module RussianPost
         'InputedCaptchaCode' => solve_captcha(page),
         'searchsign'         => '1')
       page.form.submit
->>>>>>> Splitted some methods
     end
   end
 end
