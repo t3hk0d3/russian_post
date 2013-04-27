@@ -20,21 +20,20 @@ module RussianPost
 
     def track
       initial_page = fetch_initial_page
-      initial_page.form.set_fields(
-        'BarCode'            => barcode,
-        'InputedCaptchaCode' => solve_captcha(initial_page.images.last.src),
-        'searchsign'         => '1')
-
-      tracking_page = initial_page.form.submit
+      tracking_page = fetch_tracking_data(initial_page)
       parse_tracking_table(tracking_page.search(".pagetext tbody tr"))
     end
 
     private
 
-    def solve_captcha(captcha_url)
-      captcha = RussianPost::Captcha.for_url(captcha_url)
+    def solve_captcha(page)
+      captcha = RussianPost::Captcha.for_url(get_captcha_url(page))
       raise "Unable to recognize captcha" unless captcha.valid?
       captcha.text
+    end
+
+    def get_captcha_url(page)
+      page.images.last.src
     end
 
     def parse_tracking_table(body)
@@ -54,12 +53,9 @@ module RussianPost
 
     def fetch_initial_page
       page = agent.get(TRACKING_PAGE)
-      if page.form.has_field?("key")
-        page = initial_page.form.submit
-      elsif page.body.include?("window.location.replace(window.location.toString())")
-        page = fetch_initial_page
-      end
+      page.form.has_field?("key") ? page.form.submit : page # bypass security
 
+<<<<<<< HEAD
 <<<<<<< HEAD
       if response.body.include?("window.location.replace(window.location.toString())") # hehe
 <<<<<<< HEAD
@@ -83,6 +79,23 @@ module RussianPost
 =======
       page
 >>>>>>> Mechanize instead of Excon
+=======
+      # I just couldn't reproduce this behavior in 500+ requests. Maybe
+      # it's more of an exception?
+      # -- @artemshitov
+      # elsif page.body.include?("window.location.replace(window.location.toString())")
+      #   page = fetch_initial_page
+      # end
+      # page
+    end
+
+    def fetch_tracking_data(page)
+      page.form.set_fields(
+        'BarCode'            => barcode,
+        'InputedCaptchaCode' => solve_captcha(page),
+        'searchsign'         => '1')
+      page.form.submit
+>>>>>>> Splitted some methods
     end
   end
 end
