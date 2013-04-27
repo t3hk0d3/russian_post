@@ -55,15 +55,15 @@ module RussianPost
 
     def fetch_initial_page
       page = agent.get(TRACKING_PAGE)
-      page.form.has_field?("key") ? page.form.submit : page # bypass security
+      bypass_security(page) or page
+    end
 
-      # I just couldn't reproduce this behavior in 500+ requests. Maybe
-      # it's more of an exception?
-      # -- @artemshitov
-      # elsif page.body.include?("window.location.replace(window.location.toString())")
-      #   page = fetch_initial_page
-      # end
-      # page
+    def bypass_security(page)
+      if page.form.has_field?("key")
+        page.form.submit
+      elsif page.body.include?("window.location.replace(window.location.toString())")
+        fetch_initial_page
+      end
     end
 
     def fetch_tracking_data(page)
