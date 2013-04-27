@@ -27,9 +27,7 @@ module RussianPost
     private
 
     def solve_captcha(page)
-      captcha = RussianPost::Captcha.for_url(get_captcha_url(page))
-      raise "Unable to recognize captcha" unless captcha.valid?
-      captcha.text
+      RussianPost::Captcha.for_url(get_captcha_url(page)).text
     end
 
     def get_captcha_url(page)
