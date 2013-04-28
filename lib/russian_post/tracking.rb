@@ -30,7 +30,7 @@ module RussianPost
     end
 
     def get_captcha_url(page)
-      page.images.last.src
+      page.image_with(:id => 'captchaImage').src
     end
 
     def tracking_table(page)
