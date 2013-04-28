@@ -69,8 +69,8 @@ module RussianPost
     end
 
     def bypass_security(page)
-      if page.form.has_field?("key")
-        page.form.submit
+      if page.form && page.form.has_field?("key")
+        bypass_security(page.form.submit)
       elsif page.body.include?("window.location.replace(window.location.toString())")
         fetch_initial_page
       end
