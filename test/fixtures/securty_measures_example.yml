@@ -1,0 +1,108 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - ! '*/*'
+      User-Agent:
+      - Mechanize/2.6.0 Ruby/1.9.3p392 (http://github.com/sparklemotion/mechanize/)
+      Accept-Encoding:
+      - gzip,deflate,identity
+      Accept-Charset:
+      - ISO-8859-1,utf-8;q=0.7,*;q=0.7
+      Accept-Language:
+      - en-us,en;q=0.5
+      Connection:
+      - keep-alive
+      Keep-Alive:
+      - 300
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - Apache/2.2.6 (Fedora)
+      Content-Type:
+      - text/html; charset=UTF-8
+      Connection:
+      - close
+      Expires:
+      - Mon, 26 Jul 1997 05:00:00 GMT
+      Cache-Control:
+      - no-store, no-cache, must-revalidate
+      Pragma:
+      - no-cache
+    body:
+      encoding: US-ASCII
+      string: ! "<html><head></head><body onload=\"document.myform.submit();\"><form
+        method=\"post\" name=\"myform\" style=\"visibility:hidden;\"><input id=\"key\"
+        name=\"key\" value=\"893773\"/><input type=\"submit\"/></form></body></html>\r\n\r\n"
+    http_version: 
+  recorded_at: Sun, 28 Apr 2013 03:11:20 GMT
+- request:
+    method: post
+    uri: http://www.russianpost.ru/rp/servise/ru/home/postuslug/trackingpo
+    body:
+      encoding: UTF-8
+      string: key=893773
+    headers:
+      Accept:
+      - ! '*/*'
+      User-Agent:
+      - Mechanize/2.6.0 Ruby/1.9.3p392 (http://github.com/sparklemotion/mechanize/)
+      Accept-Encoding:
+      - gzip,deflate,identity
+      Accept-Charset:
+      - ISO-8859-1,utf-8;q=0.7,*;q=0.7
+      Accept-Language:
+      - en-us,en;q=0.5
+      Referer:
+      - !ruby/object:URI::HTTP
+        scheme: http
+        user: 
+        password: 
+        host: www.russianpost.ru
+        port: 80
+        path: /rp/servise/ru/home/postuslug/trackingpo
+        query: 
+        opaque: 
+        registry: 
+        fragment: 
+        parser: 
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Content-Length:
+      - '10'
+      Connection:
+      - keep-alive
+      Keep-Alive:
+      - 300
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - Apache/2.2.6 (Fedora)
+      Content-Type:
+      - text/html; charset=UTF-8
+      Connection:
+      - close
+      Expires:
+      - Mon, 26 Jul 1997 05:00:00 GMT
+      Cache-Control:
+      - no-store, no-cache, must-revalidate
+      Pragma:
+      - no-cache
+    body:
+      encoding: US-ASCII
+      string: <html><head></head><body onload="window.location.replace(window.location.toString())"></body></html>
+    http_version: 
+  recorded_at: Sun, 28 Apr 2013 03:11:20 GMT
+recorded_with: VCR 2.4.0
