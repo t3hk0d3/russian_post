@@ -35,8 +35,8 @@ RussianPost::Tracking.new(tracking_code).track
 require 'russian_post'
 
 RussianPost::Captcha.for_url(captcha_url).text
-# => 96950
+# => "96950"
 
 RussianPost::Captcha.for_data(png_blob).text
-# => 43455
+# => "43455"
 ```
