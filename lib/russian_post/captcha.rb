@@ -63,7 +63,7 @@ module RussianPost
 
     def prepare_text(results)
       captcha_text = results.map(&:character).join('')
-      captcha_text.size == 5 ? captcha_text : raise("Unable to recognize captcha")
+      captcha_text.size == 5 ? captcha_text : raise(RecognitionError, "Unable to recognize captcha")
     end
 
     def grayscale(captcha_image)
@@ -94,6 +94,8 @@ module RussianPost
       ChunkyPNG::Image.from_blob(data)
     end
 
+    class RecognitionError < StandardError; end
+    
   end
 
 end

@@ -25,5 +25,15 @@ module RussianPost
         assert_equal expected, tracking.first
       end
     end
+
+    def test_captcha_failure
+      VCR.use_cassette('tracking_captcha_failure') do
+        assert_raise RussianPost::Captcha::RecognitionError do
+          RussianPost::Tracking.new('RA287813139CN', captcha: '123456').track
+        end
+
+      end
+
+    end
   end
 end
