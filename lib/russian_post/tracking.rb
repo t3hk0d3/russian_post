@@ -1,5 +1,6 @@
-require 'mechanize'
+# encoding: UTF-8
 
+require 'mechanize'
 require 'time'
 
 module RussianPost
@@ -36,6 +37,14 @@ module RussianPost
     def check_validity!(page)
       if page.search('//div[@id=\'CaptchaErrorCodeContainer\']/text()').first
         raise RussianPost::Captcha::RecognitionError, "Failed to recognize captcha. Please contact developers!"
+      end
+
+      if error = page.search('//p[@class=\'red\']/text()').first
+        error = error.to_s
+
+        if error =~ /К сожалению, информация о почтовом отправлении с номером ([A-Z0-9]+) не найдена./
+          raise RussianPost::Tracking::NotFound, error
+        end
       end
     end
 
@@ -83,5 +92,8 @@ module RussianPost
         'searchsign'         => '1')
       page.form.submit
     end
+
+    class NotFound < StandardError; end
+
   end
 end

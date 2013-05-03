@@ -31,9 +31,15 @@ module RussianPost
         assert_raise RussianPost::Captcha::RecognitionError do
           RussianPost::Tracking.new('RA287813139CN', captcha: '123456').track
         end
-
       end
+    end
 
+    def test_barcode_not_found
+      VCR.use_cassette("tracking_not_found") do
+        assert_raise RussianPost::Tracking::NotFound do
+          RussianPost::Tracking.new('CG087991108US').track
+        end
+      end
     end
   end
 end
